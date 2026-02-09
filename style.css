@@ -295,3 +295,86 @@ h2 {
 .timer {
   font-weight: 600;
 }
+
+@media (max-width: 900px) {
+  html {
+    font-size: 56.25%; /* 1rem = 9px */
+  }
+
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .balance {
+    grid-column: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .movements {
+    grid-row: auto;
+  }
+
+  .summary {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .operation {
+    padding: 2.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+
+  nav {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .login {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .login__input {
+    width: 100%;
+  }
+
+  .app {
+    margin: 2rem auto;
+    gap: 1.5rem;
+  }
+
+  .movements__row {
+    padding: 1.5rem 2rem;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+
+  .movements__value {
+    margin-left: 0;
+  }
+
+  /* FORMS */
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .form__label {
+    text-align: left;
+  }
+
+  .form__btn {
+    grid-column: 1;
+  }
+
+  .logout-timer {
+    text-align: center;
+  }
+}

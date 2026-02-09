@@ -78,9 +78,9 @@ const displayMovement = (transactions) => {
 };
 
 // Calculate balance and display balance
-const calAndDisplayBalance = (transactions) => {
-  const balance = transactions.reduce((acc, trans) => acc + trans, 0);
-  labelBalance.textContent = `${balance}€`;
+const calAndDisplayBalance = (acc) => {
+  acc.balance = acc.transactions.reduce((acc, trans) => acc + trans, 0);
+  labelBalance.textContent = `${acc.balance}€`;
 };
 
 //Calculate and display summery for deposits, withdrawals and interest
@@ -115,9 +115,18 @@ const createUsernames = (usernames) => {
 };
 createUsernames(accounts);
 
+const updateUi = (acc) => {
+  displayMovement(acc.transactions);
+  // Display balance
+  calAndDisplayBalance(acc);
+  //Display summery
+  calDisplaySummery(acc);
+};
+
 // Events listeners
 let userAccount;
 
+// Login Event
 btnLogin.addEventListener('click', (e) => {
   // Prevent default
   e.preventDefault();
@@ -134,14 +143,35 @@ btnLogin.addEventListener('click', (e) => {
   }
 
   // Hide login form when user login
-  inputLoginPin.style.opacity = 0;
-  inputLoginUsername.style.opacity = 0;
-  btnLogin.style.opacity = 0;
+  // inputLoginPin.style.opacity = 0;
+  // inputLoginUsername.style.opacity = 0;
+  inputLoginPin.blur();
 
   //Display transactions
-  displayMovement(userAccount.transactions);
-  // Display balance
-  calAndDisplayBalance(userAccount.transactions);
-  //Display summery
-  calDisplaySummery(userAccount);
+  updateUi(userAccount);
+});
+
+// Transfer Event
+btnTransfer.addEventListener('click', (e) => {
+  e.preventDefault();
+
+  const transferAmount = Number(inputTransferAmount.value);
+  const receiverAccount = accounts.find(
+    (acc) => acc.username === inputTransferTo.value,
+  );
+
+  inputTransferAmount.value = inputTransferTo.value = '';
+
+  if (
+    transferAmount > 0 &&
+    receiverAccount &&
+    userAccount.balance >= transferAmount &&
+    receiverAccount?.username !== userAccount.username
+  ) {
+    userAccount.transactions.push(-transferAmount);
+    receiverAccount.transactions.push(transferAmount);
+
+    // Display new changes
+    updateUi(userAccount);
+  }
 });
