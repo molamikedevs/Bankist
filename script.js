@@ -145,6 +145,8 @@ btnLogin.addEventListener('click', (e) => {
   // Hide login form when user login
   // inputLoginPin.style.opacity = 0;
   // inputLoginUsername.style.opacity = 0;
+  // Clear input fields
+  inputLoginUsername.value = inputLoginPin.value = '';
   inputLoginPin.blur();
 
   //Display transactions
@@ -174,4 +176,41 @@ btnTransfer.addEventListener('click', (e) => {
     // Display new changes
     updateUi(userAccount);
   }
+});
+
+// Loan event
+btnLoan.addEventListener('click', (e) => {
+  e.preventDefault();
+
+  const loanAmount = Number(inputLoanAmount.value);
+  if (
+    loanAmount > 0 &&
+    userAccount.transactions.some((trans) => trans >= loanAmount * 0.1)
+  ) {
+    userAccount.transactions.push(loanAmount);
+
+    // Update ui to track changes
+    updateUi(userAccount);
+  }
+  inputLoanAmount.value = '';
+});
+
+// Close account event
+btnClose.addEventListener('click', (e) => {
+  e.preventDefault();
+
+  if (
+    inputCloseUsername.value === userAccount.username &&
+    Number(inputClosePin.value) === userAccount.pin
+  ) {
+    const index = accounts.findIndex(
+      (acc) => acc.username === userAccount.username,
+    );
+    console.log(index);
+    accounts.splice(index, 1);
+
+    labelWelcome.textContent = `Log in to get started`;
+    containerApp.style.opacity = 0;
+  }
+  inputCloseUsername.value = inputClosePin.value = '';
 });
