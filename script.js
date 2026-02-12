@@ -62,9 +62,13 @@ const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
 // Display transactions
-const displayMovement = (transactions) => {
+const displayTransactions = (transactions, sort = false) => {
   containerMovements.innerHTML = '';
-  transactions.forEach((trans, i) => {
+
+  const trans = sort
+    ? transactions.slice().sort((a, b) => a - b)
+    : transactions;
+  trans.forEach((trans, i) => {
     const type = trans > 0 ? 'deposit' : 'withdrawal';
     const html = `
         <div class="movements__row">
@@ -116,7 +120,7 @@ const createUsernames = (usernames) => {
 createUsernames(accounts);
 
 const updateUi = (acc) => {
-  displayMovement(acc.transactions);
+  displayTransactions(acc.transactions);
   // Display balance
   calAndDisplayBalance(acc);
   //Display summery
@@ -192,6 +196,8 @@ btnLoan.addEventListener('click', (e) => {
     // Update ui to track changes
     updateUi(userAccount);
   }
+
+  // Rest input filed
   inputLoanAmount.value = '';
 });
 
@@ -213,4 +219,12 @@ btnClose.addEventListener('click', (e) => {
     containerApp.style.opacity = 0;
   }
   inputCloseUsername.value = inputClosePin.value = '';
+});
+
+// Sort Event
+let sorted = false;
+btnSort.addEventListener('click', (e) => {
+  e.preventDefault();
+  displayTransactions(userAccount.transactions, !sorted);
+  sorted = !sorted;
 });
