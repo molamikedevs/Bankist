@@ -22,8 +22,8 @@ const account1 = {
     '2026-01-27T11:15:00.000Z',
   ],
 
-  currency: 'EUR',
-  locale: 'pt-PT',
+  currency: 'AZN',
+  locale: navigator.language,
 };
 
 const account2 = {
@@ -44,7 +44,7 @@ const account2 = {
   ],
 
   currency: 'USD',
-  locale: 'en-US',
+  locale: navigator.language,
 };
 
 const account3 = {
@@ -65,7 +65,7 @@ const account3 = {
   ],
 
   currency: 'GBP',
-  locale: 'en-GB',
+  locale: navigator.language,
 };
 
 const account4 = {
@@ -83,7 +83,7 @@ const account4 = {
   ],
 
   currency: 'USD',
-  locale: 'en-US',
+  locale: navigator.language,
 };
 
 const accounts = [account1, account2, account3, account4];
@@ -114,7 +114,8 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-const formattedTransactionDate = (date) => {
+// Format transaction helper function
+const formattedTransactionDate = (date, local) => {
   const calDaysPassed = (day1, day2) =>
     Math.round(Math.abs(day2 - day1) / (1000 * 60 * 60 * 24));
   const daysPassed = calDaysPassed(new Date(), date);
@@ -122,10 +123,44 @@ const formattedTransactionDate = (date) => {
   if (daysPassed === 1) return 'Yesterday';
   if (daysPassed <= 7) return `${daysPassed} days ago`;
 
-  const day = `${date.getDate()}`.padStart(2, 0);
-  const month = `${date.getMonth() + 1}`.padStart(2, 0);
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+  return Intl.DateTimeFormat(local).format(date);
+};
+
+// Format currency helper function
+const formatCurrency = (value, locale, currency) => {
+  return Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+  }).format(value);
+};
+
+const logout = () => {
+  labelWelcome.textContent = 'Log in to get started';
+  containerApp.style.opacity = 0;
+};
+
+const logoutTimer = (duration) => {
+  let time = duration;
+
+  const tick = () => {
+    const min = String(Math.trunc(time / 60)).padStart(2, '0');
+    const sec = String(time % 60).padStart(2, '0');
+    // Display time to the UI
+    labelTimer.textContent = `${min}:${sec}`;
+
+    // Log user out when the time runs out(0)
+    if (time === 0) {
+      clearInterval(timer);
+      logout();
+    }
+    // Decrease
+    time--;
+  };
+
+  tick();
+  const timer = setInterval(tick, 1000);
+
+  return timer;
 };
 // Display transactions
 const displayTransactions = (acc, sort = false) => {
@@ -139,14 +174,20 @@ const displayTransactions = (acc, sort = false) => {
 
   transactionsAndDates.forEach(({ transaction, transactionDate }, i) => {
     const date = new Date(transactionDate);
-    const displayDate = formattedTransactionDate(date);
+    const displayDate = formattedTransactionDate(date, acc.locale);
+
+    const formattedTrans = formatCurrency(
+      transaction,
+      acc.locale,
+      acc.currency,
+    );
 
     const type = transaction > 0 ? 'deposit' : 'withdrawal';
     const html = `
         <div class="movements__row">
           <div class="movements__type movements__type--${type}">${i} deposit</div>
           <div class="movements__date">${displayDate}</div>
-          <div class="movements__value">${transaction.toFixed(2)}€</div>
+          <div class="movements__value">${formattedTrans}</div>
         </div>`;
 
     containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -156,7 +197,11 @@ const displayTransactions = (acc, sort = false) => {
 // Calculate balance and display balance
 const calAndDisplayBalance = (acc) => {
   acc.balance = acc.transactions.reduce((acc, trans) => acc + trans, 0);
-  labelBalance.textContent = `${acc.balance.toFixed(2)}€`;
+  labelBalance.textContent = formatCurrency(
+    acc.balance,
+    acc.locale,
+    acc.currency,
+  );
 };
 
 //Calculate and display summery for deposits, withdrawals and interest
@@ -164,19 +209,27 @@ const calDisplaySummery = (acc) => {
   const deposits = acc.transactions
     .filter((deposit) => deposit > 0)
     .reduce((acc, deposit) => acc + deposit, 0);
-  labelSumIn.textContent = `${deposits.toFixed(2)}€`;
+  labelSumIn.textContent = formatCurrency(deposits, acc.locale, acc.currency);
 
   const withdrawals = acc.transactions
     .filter((withdraw) => withdraw < 0)
     .reduce((acc, withdraw) => acc + withdraw, 0);
-  labelSumOut.textContent = `${withdrawals.toFixed(2)}€`;
+  labelSumOut.textContent = formatCurrency(
+    withdrawals,
+    acc.locale,
+    acc.currency,
+  );
 
   const interest = acc.transactions
     .filter((deposit) => deposit > 0)
     .map((deposit) => (deposit * acc.interestRate) / 100)
     .filter((int) => int >= 1)
     .reduce((acc, int) => acc + int, 0);
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+  labelSumInterest.textContent = formatCurrency(
+    interest,
+    acc.locale,
+    acc.currency,
+  );
 };
 
 // Set username initials
@@ -200,7 +253,7 @@ const updateUi = (acc) => {
 };
 
 // Events listeners
-let userAccount;
+let userAccount, timer;
 
 // Login Event
 btnLogin.addEventListener('click', (e) => {
@@ -219,16 +272,25 @@ btnLogin.addEventListener('click', (e) => {
 
   containerApp.style.opacity = 1;
   const now = new Date();
-  const day = `${now.getDate()}`.padStart(2, 0);
-  const month = `${now.getMonth() + 1}`.padStart(2, 0);
-  const year = `${now.getFullYear()}`.padStart(2, 0);
-  const hour = `${now.getHours()}`.padStart(2, 0);
-  const min = `${now.getMinutes()}`.padStart(2, 0);
+  const options = {
+    hour: 'numeric',
+    min: 'numeric',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    weekday: 'long',
+  };
 
-  labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
+  labelDate.textContent = new Intl.DateTimeFormat(
+    userAccount.locale,
+    options,
+  ).format(now);
 
   inputLoginUsername.value = inputLoginPin.value = '';
   inputLoginPin.blur();
+
+  if (timer) clearInterval(timer);
+  timer = logoutTimer(120);
 
   //Display transactions
   updateUi(userAccount);
@@ -259,6 +321,10 @@ btnTransfer.addEventListener('click', (e) => {
 
     // Display new changes
     updateUi(userAccount);
+
+    // Rest timer
+    clearInterval(timer);
+    timer = logoutTimer(120);
   }
 });
 
@@ -271,11 +337,17 @@ btnLoan.addEventListener('click', (e) => {
     loanAmount > 0 &&
     userAccount.transactions.some((trans) => trans >= loanAmount * 0.1)
   ) {
-    userAccount.transactions.push(loanAmount);
-    userAccount.transactionDates.push(new Date());
+    setTimeout(() => {
+      userAccount.transactions.push(loanAmount);
+      userAccount.transactionDates.push(new Date());
 
-    // Update ui to track changes
-    updateUi(userAccount);
+      // Update ui to track changes
+      updateUi(userAccount);
+
+      //Reset timer
+      clearInterval(timer);
+      timer = logoutTimer(120);
+    }, 3000);
   }
 
   // Rest input filed
